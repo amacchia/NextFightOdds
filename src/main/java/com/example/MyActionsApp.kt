@@ -20,25 +20,20 @@ import com.google.actions.api.ActionRequest
 import com.google.actions.api.ActionResponse
 import com.google.actions.api.DialogflowApp
 import com.google.actions.api.ForIntent
-import com.google.actions.api.response.ResponseBuilder
-import com.google.api.services.actions_fulfillment.v2.model.User
-import com.google.gson.internal.LinkedTreeMap
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.ResourceBundle
-import java.util.stream.Collectors
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.*
 
 /**
  * Implements all intent handlers for this Action. Note that your App must extend from DialogflowApp
  * if using Dialogflow or ActionsSdkApp for ActionsSDK based Actions.
  */
 class MyActionsApp : DialogflowApp() {
+
+    companion object {
+        private val LOGGER = LoggerFactory.getLogger(MyActionsApp::class.java)
+    }
 
     @ForIntent("Default Welcome Intent")
     fun welcome(request: ActionRequest): ActionResponse {
@@ -57,6 +52,24 @@ class MyActionsApp : DialogflowApp() {
         return responseBuilder.build()
     }
 
+
+    @ForIntent("Get Fighter Name")
+    fun getOdds(request: ActionRequest): ActionResponse {
+        LOGGER.info("get odds intent started")
+        val responseBuilder = getResponseBuilder(request)
+        return try {
+            val person = request.getParameter("person") as Map<*, *>
+            val fighterName = person["name"] as String
+
+            val allOddsJson = NetworkUtils.retrieveOdds()
+            val response = generateResponse(fighterName, allOddsJson)
+            responseBuilder.add(response).endConversation()
+            responseBuilder.build()
+        } catch (e: Exception) {
+            responseBuilder.add(e.message ?: "There was an error processing your request.").build()
+        }
+    }
+
     @ForIntent("bye")
     fun bye(request: ActionRequest): ActionResponse {
         LOGGER.info("Bye intent start.")
@@ -68,72 +81,62 @@ class MyActionsApp : DialogflowApp() {
         return responseBuilder.build()
     }
 
-    @ForIntent("Get Fighter Name")
-    fun getOdds(request: ActionRequest): ActionResponse {
-        LOGGER.info("get odds intent started")
-        val responseBuilder = getResponseBuilder(request)
-        try {
-            val person = request.getParameter("person") as Map<*, *>
-            val fighterName = person["name"] as String
-
-            val url = URL("https://api.the-odds-api.com/v3/odds?apiKey=b1fe9034711f9f456a4f388d4e7d677b&sport=mma_mixed_martial_arts&region=us")
-            val con = url.openConnection() as HttpURLConnection
-            con.requestMethod = "GET"
-
-            val resCode = con.responseCode
-
-            if (resCode > 299)
-                responseBuilder.add("There was an error with your request, sorry bro.").endConversation()
-            else {
-                val resStream = con.inputStream
-                val buffReader = BufferedReader(InputStreamReader(resStream))
-                val content = StringBuffer()
-                buffReader.forEachLine {
-                    content.append(it)
-                }
-                con.disconnect()
-
-                val resJson = JSONObject(content.toString())
-                val fights = resJson.getJSONArray("data")
-
-                val indexOfMatchingFight = fights.indexOfFirst {
-                    val fight = it as JSONObject
-                    val fighters = fight.getJSONArray("teams")
-                    if (fighters == null) {
-                        false
-                    } else {
-                        fighters.getString(0) == fighterName || fighters.getString(1) == fighterName
-                    }
-                }
-
-                val matchingFight = fights.getJSONObject(indexOfMatchingFight)
-                val fighters = matchingFight.getJSONArray("teams")
-                val fighter1 = fighters.getString(0)
-                val fighter2 = fighters.getString(1)
-                val site = matchingFight.getJSONArray("sites").getJSONObject(0) // Just use the first site
-                val odds = site.getJSONObject("odds").getJSONArray("h2h")
-                val response = "The odds $fighter1 wins is ${convertOdds(odds.getDouble(0))} " +
-                        "and the odds $fighter2 wins is ${convertOdds(odds.getDouble(1))}"
-                responseBuilder.add(response).endConversation()
-            }
-
-            return responseBuilder.build()
-        } catch (e: Exception) {
-            return responseBuilder.add(e.toString()).build()
-        }
+    private fun generateResponse(fighterName: String, allOddsJson: JSONObject): String {
+        val fights = allOddsJson.getJSONArray("data")
+        val matchingFight = findMatchingFight(fighterName, fights)
+        val fighters = matchingFight.getJSONArray("teams")
+        val fighter1 = fighters.getString(0)
+        val fighter2 = fighters.getString(1)
+        val odds = getBettingOdds(matchingFight)
+        val fighterOneOdds = odds.first
+        val fighterTwoOdds = odds.second
+        return "The odds $fighter1 wins is ${convertOdds(fighterOneOdds)} " +
+                "and the odds $fighter2 wins is ${convertOdds(fighterTwoOdds)}"
     }
 
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(MyActionsApp::class.java)
+    private fun findMatchingFight(fighterName: String, allFights: JSONArray): JSONObject {
+        val indexOfMatchingFight = allFights.indexOfFirst {
+            isMatchingFight(it as JSONObject, fighterName)
+        }
+
+        if (indexOfMatchingFight == -1)
+            throw Exception("No upcoming fight found for $fighterName")
+
+        return allFights.getJSONObject(indexOfMatchingFight)
+    }
+
+    private fun isMatchingFight(fight: JSONObject, fighterName: String): Boolean {
+        val fighters = fight.getJSONArray("teams")
+
+        return if (fighters == null)
+            false
+        else
+            fighters.getString(0) == fighterName || fighters.getString(1) == fighterName
+    }
+
+    private fun getBettingOdds(fight: JSONObject): Pair<Double, Double> {
+        val bettingSites = fight.getJSONArray("sites")
+        val site = bettingSites.getJSONObject(0)
+        val oddsArray = site.getJSONObject("odds").getJSONArray("h2h")
+        val fighterOneOdds = oddsArray.getDouble(0)
+        val fighterTwoOdds = oddsArray.getDouble(1)
+        return Pair(fighterOneOdds, fighterTwoOdds)
     }
 
     private fun convertOdds(decimalOdds: Double): String {
-        return if (decimalOdds >= 2.0) {
-            val decInt = ((decimalOdds - 1) * 100).toInt()
-            "+$decInt"
-        } else {
-            val decInt = (-100 / (decimalOdds - 1)).toInt()
-            "$decInt"
-        }
+        return if (decimalOdds >= 2.0)
+            convertFavoriteOdds(decimalOdds)
+        else
+            convertUnderdogOdds(decimalOdds)
+    }
+
+    private fun convertFavoriteOdds(decimalOdds: Double): String {
+        val decInt = ((decimalOdds - 1) * 100).toInt()
+        return "+$decInt"
+    }
+
+    private fun convertUnderdogOdds(decimalOdds: Double): String {
+        val decInt = (-100 / (decimalOdds - 1)).toInt()
+        return "$decInt"
     }
 }
