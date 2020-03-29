@@ -4,20 +4,16 @@ import com.google.actions.api.ActionRequest
 import com.google.actions.api.ActionResponse
 import com.google.actions.api.DialogflowApp
 import com.google.actions.api.ForIntent
-import org.slf4j.LoggerFactory
+import logger.Logger
 import utils.NetworkUtils
 import utils.ResponseGenerator
 import java.util.*
 
 class MyActionsApp : DialogflowApp() {
 
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(MyActionsApp::class.java)
-    }
-
     @ForIntent("Default Welcome Intent")
     fun welcome(request: ActionRequest): ActionResponse {
-        LOGGER.info("Welcome intent start.")
+        Logger.log("Welcome intent start.")
         val responseBuilder = getResponseBuilder(request)
         val rb = ResourceBundle.getBundle("resources")
         val user = request.user
@@ -28,14 +24,14 @@ class MyActionsApp : DialogflowApp() {
             responseBuilder.add(rb.getString("welcome"))
         }
 
-        LOGGER.info("Welcome intent end.")
+        Logger.log("Welcome intent end.")
         return responseBuilder.build()
     }
 
 
     @ForIntent("Get Fighter Name")
     fun getOdds(request: ActionRequest): ActionResponse {
-        LOGGER.info("get odds intent started")
+        Logger.log("get odds intent started")
         val responseBuilder = getResponseBuilder(request)
         return try {
             val person = request.getParameter("person") as Map<*, *>
@@ -46,18 +42,19 @@ class MyActionsApp : DialogflowApp() {
             responseBuilder.add(response).endConversation()
             responseBuilder.build()
         } catch (e: Exception) {
+            e.printStackTrace()
             responseBuilder.add(e.message ?: "There was an error processing your request.").build()
         }
     }
 
     @ForIntent("bye")
     fun bye(request: ActionRequest): ActionResponse {
-        LOGGER.info("Bye intent start.")
+        Logger.log("Bye intent start.")
         val responseBuilder = getResponseBuilder(request)
         val rb = ResourceBundle.getBundle("resources")
 
         responseBuilder.add(rb.getString("bye")).endConversation()
-        LOGGER.info("Bye intent end.")
+        Logger.log("Bye intent end.")
         return responseBuilder.build()
     }
 

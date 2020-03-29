@@ -39,13 +39,16 @@ class JsonUtils {
             return Pair(favorite, underdog)
         }
 
-        private fun parseFightOdds(bettingSites: JSONArray): Pair<Double, Double> {
-            val selectedSite = bettingSites.getJSONObject(0)
-            val odds = selectedSite.getJSONObject("odds")
-            val h2hOdds = odds.getJSONArray("h2h")
-            val favoriteOdds = h2hOdds.getDouble(FAVORITE_INDEX)
-            val underDogOdds = h2hOdds.getDouble(UNDERDOG_INDEX)
-            return Pair(favoriteOdds, underDogOdds)
+        private fun parseFightOdds(bettingSites: JSONArray): Pair<Double?, Double?> {
+            return if (bettingSites.length() > 0) {
+                val selectedSite = bettingSites.getJSONObject(0)
+                val odds = selectedSite.getJSONObject("odds")
+                val h2hOdds = odds.getJSONArray("h2h")
+                val favoriteOdds = h2hOdds.getDouble(FAVORITE_INDEX)
+                val underDogOdds = h2hOdds.getDouble(UNDERDOG_INDEX)
+                Pair(favoriteOdds, underDogOdds)
+            } else
+                Pair(null, null)
         }
     }
 }
