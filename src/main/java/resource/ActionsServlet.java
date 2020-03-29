@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example;
+package resource;
 
 import com.google.actions.api.App;
 import org.slf4j.Logger;
@@ -51,9 +51,7 @@ public class ActionsServlet extends HttpServlet {
       LOG.info("Generated json = {}", jsonResponse);
       res.setContentType("application/json");
       writeResponse(res, jsonResponse);
-    } catch (InterruptedException e) {
-      handleError(res, e);
-    } catch (ExecutionException e) {
+    } catch (InterruptedException | ExecutionException e) {
       handleError(res, e);
     }
   }

@@ -1,3 +1,3 @@
-package com.example
+package domain
 
 data class Fighter(val name: String)

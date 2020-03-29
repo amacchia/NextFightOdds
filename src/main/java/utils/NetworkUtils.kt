@@ -1,5 +1,7 @@
-package com.example
+package utils
 
+import domain.Fight
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStream
@@ -15,27 +17,38 @@ class NetworkUtils {
         private const val REGION_QUERY_PARAM = "&region=us"
         private const val ODDS_ENDPOINT = URL + API_KEY + SPORT_QUERY_PARAM + REGION_QUERY_PARAM
 
-        fun retrieveOdds(): JSONObject {
+        fun retrieveOdds(): List<Fight> {
             val url = URL(ODDS_ENDPOINT)
             val httpURLConnection = url.openConnection() as HttpURLConnection
             httpURLConnection.requestMethod = "GET"
 
             val resCode = httpURLConnection.responseCode
             if (resCode > 299)
-                throw Exception("Error retrieving sports odds with status code $resCode")
+                throw Exception("Error retrieving sports odds. Status code: $resCode")
 
+            val convertedFights = convertResponseToJson(httpURLConnection.inputStream)
             httpURLConnection.disconnect()
-            return convertResponseToJson(httpURLConnection.inputStream)
+            return convertedFights
         }
 
-        private fun convertResponseToJson(inputStream: InputStream): JSONObject {
+        private fun convertResponseToJson(inputStream: InputStream): List<Fight> {
+            val responseBody = convertBodyToString(inputStream)
+            val fights = parseFightsArray(responseBody)
+            return JsonUtils.convertAllFightsFromJson(fights)
+        }
+
+        private fun convertBodyToString(inputStream: InputStream): String {
             val buffReader = BufferedReader(InputStreamReader(inputStream))
             val content = StringBuffer()
             buffReader.forEachLine {
                 content.append(it)
             }
+            return content.toString()
+        }
 
-            return JSONObject(content.toString())
+        private fun parseFightsArray(responseBody: String): JSONArray {
+            val responseObject = JSONObject(responseBody)
+            return responseObject.getJSONArray("data")
         }
     }
 }
