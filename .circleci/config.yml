@@ -41,7 +41,7 @@ jobs:
       # run tests!
       - run: gradle test
       - store_test_results:
-          path: test-results
+          path: build/reports/tests
       - store_artifacts:
-          path:  target
+          path:  build/reports/jacoco
 
