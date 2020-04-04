@@ -43,5 +43,5 @@ jobs:
       - store_test_results:
           path: test-results
       - store_artifacts:
-        path:  target
+          path:  target
 
