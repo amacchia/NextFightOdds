@@ -40,3 +40,8 @@ jobs:
 
       # run tests!
       - run: gradle test
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+        path:  target
+

@@ -20,7 +20,8 @@ class FightMatcher {
             val favorite = fight.favorite
             val underdog = fight.underdog
 
-            return favorite.name == fighterName || underdog.name == fighterName
+            return favorite.name.equals(fighterName, true) ||
+                    underdog.name.equals(fighterName, true)
         }
 
     }

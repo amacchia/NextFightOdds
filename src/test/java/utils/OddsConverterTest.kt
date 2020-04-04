@@ -1,6 +1,7 @@
 package utils
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class OddsConverterTest {
@@ -31,5 +32,12 @@ class OddsConverterTest {
         val convertedOdds = OddsConverter.convertOdds(odds)
 
         assertEquals("+250", convertedOdds)
+    }
+
+    @Test
+    fun testConstructor() {
+        val oddsConverter = OddsConverter()
+
+        assertNotNull(oddsConverter)
     }
 }
