@@ -42,6 +42,9 @@ jobs:
       - run: gradle test
       - store_test_results:
           path: build/test-results
+      - store_artifacts:
+          path: build/test-results
+          when: always
 
       - run: gradle jacocoTestReport
       - store_artifacts:
