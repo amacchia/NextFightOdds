@@ -19,7 +19,6 @@ package resource;
 import com.google.actions.api.ActionRequest;
 import com.google.actions.api.ActionResponse;
 import com.google.actions.api.test.MockRequestBuilder;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ public class MyActionsAppTest {
   }
 
   @Test
-  @Ignore
   public void testWelcomeUsingRawRequest() throws Exception {
     MyActionsApp app = new MyActionsApp();
     String requestBody = fromFile("request_welcome.json");
@@ -53,7 +51,6 @@ public class MyActionsAppTest {
   }
 
   @Test
-  @Ignore
   public void testWelcomeUsingMockRequestBuilder() {
     MyActionsApp app = new MyActionsApp();
     MockRequestBuilder rb = MockRequestBuilder.PreBuilt.welcome("welcome", true);
@@ -65,7 +62,6 @@ public class MyActionsAppTest {
   }
 
   @Test
-  @Ignore
   public void testBye() {
     MyActionsApp app = new MyActionsApp();
     MockRequestBuilder rb = new MockRequestBuilder();

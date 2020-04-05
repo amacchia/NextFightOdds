@@ -15,7 +15,8 @@ class JsonUtils {
         fun convertAllFightsFromJson(allFights: JSONArray): List<Fight> {
             val fights = mutableListOf<Fight>()
             allFights.forEach {
-                val fight = convertSingleFightFromJson(it as JSONObject)
+                val fightJson = it as JSONObject
+                val fight = convertSingleFightFromJson(fightJson)
                 fights.add(fight)
             }
             return fights
