@@ -2,13 +2,15 @@
 #
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
-version: 2
+orbs:
+  gcp-cli: circleci/gcp-cli@1.8.4
+version: 2.1
 jobs:
   build:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
-
+          -
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -65,9 +67,14 @@ workflows:
   build-and-deploy:
     jobs:
       - build
+      - install_and_configure_cli:
+        jobs:
+          - gcp-cli/install_and_initialize_cli:
+              executor: gcp-cli/default
       - deploy:
           requires:
             - build
+            - install_and_configure_cli
           filters:
             branches:
               only: master
