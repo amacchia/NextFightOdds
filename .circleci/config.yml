@@ -60,6 +60,7 @@ jobs:
       - checkout
       - gcp-cli/install
       - gcp-cli/initialize
+      - run: gcloud components install app-engine-java
       - run: gradle appengineDeploy
 
 workflows:
