@@ -58,6 +58,8 @@ jobs:
 
     steps:
       - checkout
+      - gcp-cli/install
+      - gcp-cli/initialize
       - run: gradle appengineDeploy
 
 workflows:
@@ -65,12 +67,9 @@ workflows:
   build-and-deploy:
     jobs:
       - build
-      - gcp-cli/install_and_initialize_cli:
-          executor: gcp-cli/default
       - deploy:
           requires:
             - build
-            - gcp-cli/install_and_initialize_cli
           filters:
             branches:
               only: master
