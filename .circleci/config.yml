@@ -62,22 +62,18 @@ jobs:
       - checkout
       - run: gradle appengineDeploy
 
-  install_and_configure_cli:
-    steps:
-      - gcp-cli/install_and_initialize_cli:
-          context: myContext
-          executor: gcp-cli/default
-
 workflows:
-  version: 2.1
+  version: 2
   build-and-deploy:
     jobs:
       - build
-      - install_and_configure_cli
+      - gcp-cli/install_and_initialize_cli:
+          context: myContext
+          executor: gcp-cli/default
       - deploy:
           requires:
             - build
-            - install_and_configure_cli
+            - gcp-cli/install_and_initialize_cli
           filters:
             branches:
               only: master
